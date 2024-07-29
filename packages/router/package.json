@@ -1,0 +1,19 @@
+{
+  "name": "@repo/router",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "@trpc/server": "11.0.0-rc.467",
+    "zod": "^3.23.8"
+  },
+  "exports": {
+    ".": "./index.ts"
+  }
+}
