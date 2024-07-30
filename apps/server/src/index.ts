@@ -1,10 +1,12 @@
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import { Server } from "ws";
 import { appRouter, createContext } from "@repo/router";
+import env from "./env";
 
 const wss = new Server({
-  port: 3001,
+  port: env.PORT,
 });
+
 const handler = applyWSSHandler({
   wss,
   router: appRouter,
