@@ -6,10 +6,10 @@ module.exports = {
     "plugin:@typescript-eslint/recommended",
     "plugin:react-hooks/recommended",
   ],
-  ignorePatterns: ["dist", ".eslintrc.cjs"],
+  ignorePatterns: ["dist", ".eslintrc.cjs", "vite.config.ts"],
   parser: "@typescript-eslint/parser",
   plugins: ["react-refresh"],
   parserOptions: {
-    project: true,
+    project: "tsconfig.app.json",
   },
 };
