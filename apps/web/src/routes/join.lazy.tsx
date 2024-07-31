@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 
-export const Route = createLazyFileRoute("/")({
-  component: Index,
+export const Route = createLazyFileRoute("/join")({
+  component: Join,
 });
 
-function Index() {
-  const nav = useNavigate({ from: "/" });
+function Join() {
+  const navigate = useNavigate();
   return (
     <div className="w-full flex min-h-[100dvh] py-8 flex-col items-center">
       <div className="w-full max-w-screen-lg flex flex-col">
@@ -15,11 +16,10 @@ function Index() {
         <div className="h-12" />
 
         <div className="flex flex-col max-w-md space-y-4 self-center w-full">
-          <Button size="lg" onClick={() => nav({ to: "/game" })}>
-            New Game
-          </Button>
-          <Button size="lg" onClick={() => nav({ to: "/join" })}>
-            Join Game
+          <Input placeholder="Game ID" />
+          <Button size="lg">Join Game</Button>
+          <Button size="lg" variant="secondary" onClick={() => navigate({ to: ".." })}>
+            Back
           </Button>
         </div>
       </div>

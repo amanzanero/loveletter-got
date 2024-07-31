@@ -16,11 +16,17 @@ import { Route as rootRoute } from './routes/__root'
 
 // Create Virtual Routes
 
+const JoinLazyImport = createFileRoute('/join')()
 const AboutLazyImport = createFileRoute('/about')()
 const IndexLazyImport = createFileRoute('/')()
 const GameIndexLazyImport = createFileRoute('/game/')()
 
 // Create/Update Routes
+
+const JoinLazyRoute = JoinLazyImport.update({
+  path: '/join',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/join.lazy').then((d) => d.Route))
 
 const AboutLazyRoute = AboutLazyImport.update({
   path: '/about',
@@ -55,6 +61,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutLazyImport
       parentRoute: typeof rootRoute
     }
+    '/join': {
+      id: '/join'
+      path: '/join'
+      fullPath: '/join'
+      preLoaderRoute: typeof JoinLazyImport
+      parentRoute: typeof rootRoute
+    }
     '/game/': {
       id: '/game/'
       path: '/game'
@@ -70,6 +83,7 @@ declare module '@tanstack/react-router' {
 export const routeTree = rootRoute.addChildren({
   IndexLazyRoute,
   AboutLazyRoute,
+  JoinLazyRoute,
   GameIndexLazyRoute,
 })
 
@@ -83,6 +97,7 @@ export const routeTree = rootRoute.addChildren({
       "children": [
         "/",
         "/about",
+        "/join",
         "/game/"
       ]
     },
@@ -91,6 +106,9 @@ export const routeTree = rootRoute.addChildren({
     },
     "/about": {
       "filePath": "about.lazy.tsx"
+    },
+    "/join": {
+      "filePath": "join.lazy.tsx"
     },
     "/game/": {
       "filePath": "game/index.lazy.tsx"
