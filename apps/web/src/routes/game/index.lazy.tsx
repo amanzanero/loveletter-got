@@ -1,12 +1,12 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
-import { trpc } from "../../lib/trpc";
+import { trpc } from "@/lib/trpc";
 
 export const Route = createLazyFileRoute("/game/")({
   component: Game,
 });
 
 function Game() {
-  trpc.onAdd.useSubscription(undefined, { onData: (d) => console.log(`Data: ${d}`) });
+  trpc.game.onAdd.useSubscription(undefined, { onData: (d) => console.log(`Data: ${d}`) });
 
   return (
     <>

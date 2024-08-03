@@ -10,7 +10,7 @@ function Index() {
   return (
     <div className="w-full flex min-h-[100dvh] py-8 flex-col items-center">
       <div className="w-full max-w-screen-lg flex flex-col">
-        <h1 className="text-3xl font-bold text-center">Love Letter Online</h1>
+        <h1 className="text-3xl font-bold text-center">Love Letter</h1>
 
         <div className="h-12" />
 
