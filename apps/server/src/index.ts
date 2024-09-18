@@ -1,16 +1,17 @@
+import "source-map-support/register";
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import { Server } from "ws";
 import { appRouter, createContext } from "@repo/router";
 import env from "./env";
 
 const wss = new Server({
-  port: env.PORT,
+  port: parseInt(env.PORT),
 });
 
 const handler = applyWSSHandler({
   wss,
   router: appRouter,
-  createContext,
+  createContext: (opts) => createContext({ ...opts, dbUrl: env.DATABASE_URL }),
   // Enable heartbeat messages to keep connection open (disabled by default)
   keepAlive: {
     enabled: true,
@@ -27,7 +28,7 @@ wss.on("connection", (ws) => {
     console.log(`➖➖ Connection (${wss.clients.size})`);
   });
 });
-console.log("✅ WebSocket Server listening on ws://localhost:3001");
+console.log(`✅ WebSocket Server listening on ws://localhost:${env.PORT}`);
 process.on("SIGTERM", () => {
   console.log("SIGTERM");
   handler.broadcastReconnectNotification();

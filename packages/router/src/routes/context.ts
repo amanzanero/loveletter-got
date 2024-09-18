@@ -1,9 +1,12 @@
 import { initTRPC } from "@trpc/server";
 import type { CreateWSSContextFnOptions } from "@trpc/server/adapters/ws";
+import { db } from "../db/drizzle";
+import { Store } from "../store";
 
-// created for each request
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const createContext = (_opts: CreateWSSContextFnOptions) => ({}); // no context
+export const createContext = (opts: CreateWSSContextFnOptions & { dbUrl: string }) => ({
+  store: Store.getOrCreate(db(opts.dbUrl)),
+});
+
 type Context = Awaited<ReturnType<typeof createContext>>;
 
 const t = initTRPC.context<Context>().create();

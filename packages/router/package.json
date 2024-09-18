@@ -4,10 +4,13 @@
   "private": true,
   "scripts": {
     "lint": "eslint . --max-warnings 0",
+    "build": "tsc --noEmit && node build.mjs",
     "check-types": "tsc --noEmit",
     "db:push": "drizzle-kit push",
     "db:check": "drizzle-kit check",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate",
+    "dev": "nodemon --watch src/ -e .ts --exec \"npm run build\""
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
@@ -15,12 +18,17 @@
     "@typescript-eslint/eslint-plugin": "^7.15.0",
     "@typescript-eslint/parser": "^7.15.0",
     "drizzle-kit": "^0.23.0",
+    "esbuild": "^0.23.0",
     "eslint": "^8.57.0",
+    "nodemon": "^3.1.4",
     "typescript": "^5.5.4"
   },
   "dependencies": {
+    "@repo/models": "workspace:*",
     "@trpc/server": "11.0.0-rc.467",
+    "dayjs": "^1.11.12",
     "drizzle-orm": "^0.32.1",
+    "nanoid": "^3.0.0",
     "postgres": "^3.4.4",
     "zod": "^3.23.8"
   },

@@ -13,65 +13,171 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as SetupImport } from './routes/_setup'
+import { Route as SetupIndexImport } from './routes/_setup.index'
+import { Route as SetupNewImport } from './routes/_setup.new'
+import { Route as SetupJoinImport } from './routes/_setup.join'
+import { Route as SetupLobbyGameIdImport } from './routes/_setup.lobby.$gameId'
 
 // Create Virtual Routes
 
-const JoinLazyImport = createFileRoute('/join')()
-const IndexLazyImport = createFileRoute('/')()
-const GameIndexLazyImport = createFileRoute('/game/')()
+const GameGameIdLazyImport = createFileRoute('/game/$gameId')()
 
 // Create/Update Routes
 
-const JoinLazyRoute = JoinLazyImport.update({
-  path: '/join',
+const SetupRoute = SetupImport.update({
+  id: '/_setup',
   getParentRoute: () => rootRoute,
-} as any).lazy(() => import('./routes/join.lazy').then((d) => d.Route))
+} as any)
 
-const IndexLazyRoute = IndexLazyImport.update({
+const SetupIndexRoute = SetupIndexImport.update({
   path: '/',
-  getParentRoute: () => rootRoute,
-} as any).lazy(() => import('./routes/index.lazy').then((d) => d.Route))
+  getParentRoute: () => SetupRoute,
+} as any)
 
-const GameIndexLazyRoute = GameIndexLazyImport.update({
-  path: '/game/',
+const GameGameIdLazyRoute = GameGameIdLazyImport.update({
+  path: '/game/$gameId',
   getParentRoute: () => rootRoute,
-} as any).lazy(() => import('./routes/game/index.lazy').then((d) => d.Route))
+} as any).lazy(() => import('./routes/game/$gameId.lazy').then((d) => d.Route))
+
+const SetupNewRoute = SetupNewImport.update({
+  path: '/new',
+  getParentRoute: () => SetupRoute,
+} as any)
+
+const SetupJoinRoute = SetupJoinImport.update({
+  path: '/join',
+  getParentRoute: () => SetupRoute,
+} as any)
+
+const SetupLobbyGameIdRoute = SetupLobbyGameIdImport.update({
+  path: '/lobby/$gameId',
+  getParentRoute: () => SetupRoute,
+} as any)
 
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexLazyImport
+    '/_setup': {
+      id: '/_setup'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof SetupImport
       parentRoute: typeof rootRoute
     }
-    '/join': {
-      id: '/join'
+    '/_setup/join': {
+      id: '/_setup/join'
       path: '/join'
       fullPath: '/join'
-      preLoaderRoute: typeof JoinLazyImport
+      preLoaderRoute: typeof SetupJoinImport
+      parentRoute: typeof SetupImport
+    }
+    '/_setup/new': {
+      id: '/_setup/new'
+      path: '/new'
+      fullPath: '/new'
+      preLoaderRoute: typeof SetupNewImport
+      parentRoute: typeof SetupImport
+    }
+    '/game/$gameId': {
+      id: '/game/$gameId'
+      path: '/game/$gameId'
+      fullPath: '/game/$gameId'
+      preLoaderRoute: typeof GameGameIdLazyImport
       parentRoute: typeof rootRoute
     }
-    '/game/': {
-      id: '/game/'
-      path: '/game'
-      fullPath: '/game'
-      preLoaderRoute: typeof GameIndexLazyImport
-      parentRoute: typeof rootRoute
+    '/_setup/': {
+      id: '/_setup/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof SetupIndexImport
+      parentRoute: typeof SetupImport
+    }
+    '/_setup/lobby/$gameId': {
+      id: '/_setup/lobby/$gameId'
+      path: '/lobby/$gameId'
+      fullPath: '/lobby/$gameId'
+      preLoaderRoute: typeof SetupLobbyGameIdImport
+      parentRoute: typeof SetupImport
     }
   }
 }
 
 // Create and export the route tree
 
-export const routeTree = rootRoute.addChildren({
-  IndexLazyRoute,
-  JoinLazyRoute,
-  GameIndexLazyRoute,
-})
+interface SetupRouteChildren {
+  SetupJoinRoute: typeof SetupJoinRoute
+  SetupNewRoute: typeof SetupNewRoute
+  SetupIndexRoute: typeof SetupIndexRoute
+  SetupLobbyGameIdRoute: typeof SetupLobbyGameIdRoute
+}
+
+const SetupRouteChildren: SetupRouteChildren = {
+  SetupJoinRoute: SetupJoinRoute,
+  SetupNewRoute: SetupNewRoute,
+  SetupIndexRoute: SetupIndexRoute,
+  SetupLobbyGameIdRoute: SetupLobbyGameIdRoute,
+}
+
+const SetupRouteWithChildren = SetupRoute._addFileChildren(SetupRouteChildren)
+
+export interface FileRoutesByFullPath {
+  '': typeof SetupRouteWithChildren
+  '/join': typeof SetupJoinRoute
+  '/new': typeof SetupNewRoute
+  '/game/$gameId': typeof GameGameIdLazyRoute
+  '/': typeof SetupIndexRoute
+  '/lobby/$gameId': typeof SetupLobbyGameIdRoute
+}
+
+export interface FileRoutesByTo {
+  '/join': typeof SetupJoinRoute
+  '/new': typeof SetupNewRoute
+  '/game/$gameId': typeof GameGameIdLazyRoute
+  '/': typeof SetupIndexRoute
+  '/lobby/$gameId': typeof SetupLobbyGameIdRoute
+}
+
+export interface FileRoutesById {
+  __root__: typeof rootRoute
+  '/_setup': typeof SetupRouteWithChildren
+  '/_setup/join': typeof SetupJoinRoute
+  '/_setup/new': typeof SetupNewRoute
+  '/game/$gameId': typeof GameGameIdLazyRoute
+  '/_setup/': typeof SetupIndexRoute
+  '/_setup/lobby/$gameId': typeof SetupLobbyGameIdRoute
+}
+
+export interface FileRouteTypes {
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths: '' | '/join' | '/new' | '/game/$gameId' | '/' | '/lobby/$gameId'
+  fileRoutesByTo: FileRoutesByTo
+  to: '/join' | '/new' | '/game/$gameId' | '/' | '/lobby/$gameId'
+  id:
+    | '__root__'
+    | '/_setup'
+    | '/_setup/join'
+    | '/_setup/new'
+    | '/game/$gameId'
+    | '/_setup/'
+    | '/_setup/lobby/$gameId'
+  fileRoutesById: FileRoutesById
+}
+
+export interface RootRouteChildren {
+  SetupRoute: typeof SetupRouteWithChildren
+  GameGameIdLazyRoute: typeof GameGameIdLazyRoute
+}
+
+const rootRouteChildren: RootRouteChildren = {
+  SetupRoute: SetupRouteWithChildren,
+  GameGameIdLazyRoute: GameGameIdLazyRoute,
+}
+
+export const routeTree = rootRoute
+  ._addFileChildren(rootRouteChildren)
+  ._addFileTypes<FileRouteTypes>()
 
 /* prettier-ignore-end */
 
@@ -81,19 +187,37 @@ export const routeTree = rootRoute.addChildren({
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/",
-        "/join",
-        "/game/"
+        "/_setup",
+        "/game/$gameId"
       ]
     },
-    "/": {
-      "filePath": "index.lazy.tsx"
+    "/_setup": {
+      "filePath": "_setup.tsx",
+      "children": [
+        "/_setup/join",
+        "/_setup/new",
+        "/_setup/",
+        "/_setup/lobby/$gameId"
+      ]
     },
-    "/join": {
-      "filePath": "join.lazy.tsx"
+    "/_setup/join": {
+      "filePath": "_setup.join.tsx",
+      "parent": "/_setup"
     },
-    "/game/": {
-      "filePath": "game/index.lazy.tsx"
+    "/_setup/new": {
+      "filePath": "_setup.new.tsx",
+      "parent": "/_setup"
+    },
+    "/game/$gameId": {
+      "filePath": "game/$gameId.lazy.tsx"
+    },
+    "/_setup/": {
+      "filePath": "_setup.index.tsx",
+      "parent": "/_setup"
+    },
+    "/_setup/lobby/$gameId": {
+      "filePath": "_setup.lobby.$gameId.tsx",
+      "parent": "/_setup"
     }
   }
 }

@@ -1,4 +1,4 @@
-import { createWSClient, wsLink, loggerLink } from "@trpc/client";
+import { createWSClient, wsLink, loggerLink, TRPCClientErrorLike } from "@trpc/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCReact } from "@trpc/react-query";
 import { AppRouter } from "@repo/router";
@@ -35,3 +35,5 @@ export const TrpcProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     </trpc.Provider>
   );
 };
+
+export type TRPCAppError = TRPCClientErrorLike<AppRouter>;

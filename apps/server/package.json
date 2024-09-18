@@ -6,10 +6,10 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "concurrently --kill-others-on-fail \"npm:dev:build\" \"npm:dev:start\"",
-    "dev:build": "node build.mjs --dev",
-    "dev:start": "node --watch dist/index.js",
+    "dev:build": "nodemon build.mjs --watch ./src/**/* --watch ../../packages/router/dist/index.js",
+    "dev:start": "nodemon --watch dist/index.js --exec \"node --env-file=.env dist/index.js\"",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "node build.mjs"
+    "build": "tsc && node build.mjs"
   },
   "keywords": [],
   "author": "",
@@ -20,11 +20,13 @@
     "@types/ws": "^8.5.12",
     "concurrently": "^8.2.2",
     "esbuild": "^0.23.0",
+    "nodemon": "^3.1.4",
     "typescript": "^5.5.4"
   },
   "dependencies": {
     "@repo/router": "workspace:*",
     "@trpc/server": "11.0.0-rc.467",
+    "source-map-support": "^0.5.21",
     "ws": "^8.18.0",
     "zod": "^3.23.8"
   }

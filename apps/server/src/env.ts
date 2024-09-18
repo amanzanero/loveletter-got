@@ -1,7 +1,8 @@
 import z from "zod";
 
 const envSchema = z.object({
-  PORT: z.number().default(3000),
+  PORT: z.string().default("3000"),
+  DATABASE_URL: z.string(),
 });
 
 const env = envSchema.safeParse(process.env);
