@@ -2,6 +2,10 @@ export interface Player {
   id: number;
   publicId: string;
   name: string;
+  tokens: number;
+  protected: boolean;
+  order: number;
+  hand: Card[];
 }
 
 export interface Game {
@@ -10,6 +14,9 @@ export interface Game {
   players: Player[];
   host: Player;
   state: "waiting" | "playing" | "finished";
+  playerTurn: number;
+  deck: Card[];
+  discarded: Card[];
 }
 
 export interface Card {
@@ -52,7 +59,7 @@ export const Cards: Record<CardType, Card> = {
     fullDescription: [
       "Choose another player and name a character other than Guard. If the chosen player has that card in their hand, they are out of the round.",
     ],
-    quantity: 0,
+    quantity: 5,
   } satisfies Card,
   PRIEST: {
     name: "Priest",
@@ -61,7 +68,7 @@ export const Cards: Record<CardType, Card> = {
     fullDescription: [
       "Choose another player and secretly look at their hand (without revealing it to anyone else).",
     ],
-    quantity: 0,
+    quantity: 2,
   } satisfies Card,
   BARON: {
     name: "Baron",

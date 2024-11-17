@@ -2,6 +2,7 @@ import z from "zod";
 import { publicProcedure, router } from "./context";
 import { TRPCError } from "@trpc/server";
 import { StoreError } from "../store";
+import * as GameLogic from "../loveLetterLogic";
 
 export const gameSetupRouter = router({
   newGame: publicProcedure
@@ -74,7 +75,11 @@ export const gameSetupRouter = router({
             message: "Need at least 2 players to start the game.",
           });
         }
-        await ctx.store.updateGame(game.id, { state: "playing" });
+
+        await ctx.store.initGame(input.gameId, {
+          gameId: game.id,
+          ...GameLogic.initializeGame({ playerIds: game.players.map((player) => player.id) }),
+        });
       } catch (error) {
         console.error(error);
         const message =

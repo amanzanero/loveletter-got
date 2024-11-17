@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 import { DB } from "./db/drizzle";
-import { games, players } from "./db/schema";
+import { gameDeck, games, playerHand, players } from "./db/schema";
 import { utcDateNow } from "./utils/time";
 import { nanoid } from "nanoid";
 import { Handle } from "./handle";
-import { Game, Player } from "@repo/models";
+import { Cards, CardType, Game, Player } from "@repo/models";
 
 type StoreErrorType =
   | "game_not_found"
@@ -60,8 +60,20 @@ export class Store {
     const game = await this.db.query.games.findFirst({
       where: eq(games.publicId, publicId),
       with: {
-        host: true,
-        players: true,
+        host: {
+          with: {
+            hand: true,
+          },
+        },
+        players: {
+          with: {
+            hand: true,
+          },
+          orderBy: (player, { asc }) => [asc(player.order)],
+        },
+        deck: {
+          orderBy: (deck, { asc }) => [asc(deck.order)],
+        },
       },
     });
 
@@ -72,12 +84,26 @@ export class Store {
     return {
       ...game,
       state: game.state as Game["state"],
-      host: (() => {
-        if (!game.host) {
-          throw new StoreError("game_host_not_found");
-        }
-        return game.host;
-      })(),
+      host: {
+        ...(() => {
+          if (!game.host) {
+            throw new StoreError("game_host_not_found");
+          }
+          return game.host;
+        })(),
+        hand: game.host.hand.map((card) => Cards[card.cardType as CardType]),
+      },
+      players: game.players.map((player) => ({
+        ...player,
+        hand: player.hand.map((card) => Cards[card.cardType as CardType]),
+      })),
+      deck: game.deck
+        .filter((card) => card.location === "deck")
+        .map((card) => Cards[card.cardType as CardType]),
+      discarded: game.deck
+        .filter((card) => card.location === "discarded")
+        .sort((a, b) => a.updatedAt.getTime() - b.updatedAt.getTime())
+        .map((card) => Cards[card.cardType as CardType]),
     };
   }
 
@@ -172,6 +198,7 @@ export class Store {
           publicId: nanoid(),
           createdAt: utcDateNow(),
           updatedAt: utcDateNow(),
+          order: 0,
           name: hostPlayerName,
           gameId: game.id,
         })
@@ -192,11 +219,18 @@ export class Store {
       };
     });
 
+    const hostWithHand = {
+      ...txResult.roomHost,
+      hand: [],
+    };
+
     const formattedGame = {
       ...txResult.game,
       state: txResult.game.state as Game["state"],
-      host: txResult.roomHost,
-      players: [txResult.roomHost],
+      host: hostWithHand,
+      players: [hostWithHand],
+      deck: [],
+      discarded: [],
     };
 
     const handle = new Handle(formattedGame);
@@ -206,7 +240,10 @@ export class Store {
     return formattedGame;
   }
 
-  async updateGame(gameId: number, update: Partial<Game>): Promise<void> {
+  async updateGame(
+    gameId: number,
+    update: Partial<Omit<Game, "players" | "host" | "deck" | "discarded">>
+  ): Promise<void> {
     const updateResult = await this.db
       .update(games)
       .set(update)
@@ -236,17 +273,7 @@ export class Store {
     publicGameId: string,
     playerName: string
   ): Promise<{ game: Game; player: Player }> {
-    const game = await this.db.query.games.findFirst({
-      where: eq(games.publicId, publicGameId),
-      columns: {
-        id: true,
-        publicId: true,
-        state: true,
-      },
-      with: {
-        host: true,
-      },
-    });
+    const game = await this.getGame(publicGameId);
 
     if (!game) {
       throw new StoreError("game_not_found");
@@ -263,6 +290,7 @@ export class Store {
         publicId: nanoid(),
         createdAt: utcDateNow(),
         updatedAt: utcDateNow(),
+        order: 0, // default to 0 for now, but will need to be updated when starting
         name: playerName,
         gameId: game.id,
       })
@@ -278,13 +306,7 @@ export class Store {
       if (handle) return handle;
       console.log("handle didn't exist while adding player to game");
       // make the handle if it doesn't exist
-      const formattedGame = {
-        ...game,
-        state: game.state as Game["state"],
-        host: gameHost,
-        players: [player],
-      };
-      const newHandle = new Handle(formattedGame);
+      const newHandle = new Handle(game);
       this.gameMap.set(game.publicId, Promise.resolve(newHandle));
       return newHandle;
     })();
@@ -292,12 +314,79 @@ export class Store {
     // broadcast to all subscribers
     gameHandle.update((currentGame) => ({
       ...currentGame,
-      players: [...currentGame.players, player],
+      players: [...currentGame.players, { ...player, hand: [] }],
     }));
 
     return {
       game: gameHandle.currentValue(),
-      player,
+      player: { ...player, hand: [] },
     };
+  }
+
+  async initGame(
+    publicId: string,
+    {
+      gameId,
+      playerOrderAndHand,
+      deck,
+      discarded,
+    }: {
+      gameId: number;
+      playerOrderAndHand: { playerId: number; hand: CardType[] }[];
+      deck: CardType[];
+      discarded: CardType[];
+    }
+  ): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await Promise.all([
+        // update player orders
+        ...playerOrderAndHand.map(({ playerId }, order) =>
+          tx.update(players).set({ order }).where(eq(players.id, playerId))
+        ),
+        // update player hands
+        tx.insert(playerHand).values(
+          playerOrderAndHand.flatMap(({ playerId, hand }) =>
+            hand.map((cardType, order) => ({
+              playerId,
+              gameId,
+              cardType,
+              order,
+              createdAt: utcDateNow(),
+              updatedAt: utcDateNow(),
+            }))
+          )
+        ),
+        // update deck
+        tx.insert(gameDeck).values(
+          deck
+            .map((cardType, order) => ({
+              gameId,
+              cardType,
+              location: "deck",
+              order,
+              createdAt: utcDateNow(),
+              updatedAt: utcDateNow(),
+            }))
+            .concat(
+              discarded.map((cardType, order) => ({
+                gameId,
+                cardType,
+                location: "discarded",
+                order,
+                createdAt: utcDateNow(),
+                updatedAt: utcDateNow(),
+              }))
+            )
+        ),
+        // update game state
+        tx.update(games).set({ playerTurn: 0, state: "playing" }).where(eq(games.id, gameId)),
+      ]);
+    });
+
+    const game = await this.getGame(publicId);
+    const gameHandle = await this.gameMap.get(publicId);
+    if (gameHandle && game) {
+      gameHandle.update(() => game);
+    }
   }
 }

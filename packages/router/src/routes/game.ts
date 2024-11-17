@@ -14,11 +14,11 @@ export const gameRouter = router({
     )
     .subscription(({ ctx, input }) => {
       return observable<Game>((emitter) => {
-        const releasable = ctx.store.subscribeToGame(input.gameId, (game: Game) => {
+        const eventualReleasable = ctx.store.subscribeToGame(input.gameId, (game: Game) => {
           emitter.next(game);
         });
 
-        releasable.catch((err) => {
+        eventualReleasable.catch((err) => {
           console.error(err);
           if (err instanceof StoreError) {
             emitter.error(new TRPCError({ code: "NOT_FOUND", message: err.message }));
@@ -32,11 +32,7 @@ export const gameRouter = router({
           }
         });
 
-        return async () => {
-          try {
-            (await releasable).release();
-          } catch (_err) {}
-        };
+        return () => eventualReleasable.then((releasable) => releasable.release()).catch();
       });
     }),
 });

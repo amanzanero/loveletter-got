@@ -57,7 +57,7 @@ const Lobby: React.FC = () => {
             {gameState.players.map((player) => (
               <li className="ml-4" key={player.publicId}>
                 {player.publicId === user.publicId ? (
-                  <span className="font-bold">You (${player.name})</span>
+                  <span className="font-bold">You ({player.name})</span>
                 ) : (
                   player.name
                 )}
